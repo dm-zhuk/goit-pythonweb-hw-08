@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, CheckConstraint
 from sqlalchemy.orm import relationship
-from .connect import Base, engine
+from .connect1 import Base, engine
 
 
 class Owner(Base):
