@@ -1,3 +1,5 @@
+"""Defines the API endpoints (like /contacts) using FastAPI"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database.connect import get_db

@@ -1,30 +1,32 @@
+"""Data Validation with Pydantic - ensures data sent to API is valid"""
+
 from pydantic import BaseModel, EmailStr
 from datetime import date
 from typing import Optional
 
 
-# Define shared fields for a contact
 class ContactBase(BaseModel):
     first_name: str
     last_name: str
-    email: EmailStr  # Ensure email is valid
+    email: EmailStr
     phone_number: Optional[str] = None
-    birthday: Optional[date] = None
+    birthday: date
     additional_data: Optional[str] = None
 
+    class ConfigDict:
+        from_attributes = True
 
-# for creating/updating contacts
-class ContactCreate(BaseModel):
+
+class ContactCreate(ContactBase):
     pass
 
 
-class ContactUpdate(BaseModel):
-    pass
+class ContactUpdate(ContactBase):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    birthday: Optional[date] = None
 
 
-# to return data, incl. id
-class ContactResponse(BaseModel):
+class ContactResponse(ContactBase):
     id: int
-
-    class Config:
-        orm_mode = True  # allows pydantic to convert sqlalchemy objects to JSON

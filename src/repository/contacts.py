@@ -1,4 +1,4 @@
-"""Define functions for CRUD operations and search/birthday logic"""
+"""Define functions for CRUD operations (to interact with DB) and search/birthday logic"""
 
 from sqlalchemy.orm import Session
 from database.models import Contact

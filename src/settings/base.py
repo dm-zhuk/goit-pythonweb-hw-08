@@ -2,7 +2,7 @@ import configparser
 import pathlib
 
 
-path = pathlib.Path(__file__).parent / "config.ini"  # ..parent.joinpath("config.ini")
+path = pathlib.Path(__file__).parent.joinpath("config.ini")
 parser = configparser.ConfigParser()
 if not path.exists():
     raise FileNotFoundError(f"Configuration file not found at {path}")
