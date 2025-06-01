@@ -30,3 +30,7 @@ class ContactUpdate(ContactBase):
 
 class ContactResponse(ContactBase):
     id: int
+
+
+class BirthdayResponse(BaseModel):
+    message: str

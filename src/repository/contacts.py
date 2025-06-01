@@ -1,6 +1,9 @@
 """Define functions for CRUD operations (to interact with DB) and search/birthday logic"""
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, DataError
+from sqlalchemy import extract, func
 from database.models import Contact
 from schemas.contact import ContactCreate, ContactUpdate
 from datetime import date, timedelta
@@ -28,11 +31,16 @@ def get_contact(db: Session, contact_id: int):
 def update_contact(db: Session, contact_id: int, contact: ContactUpdate):
     db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if db_contact:
-        for key, value in contact.model_dump().items():
-            setattr(db_contact, key, value)
-        db.commit()
-        db.refresh(db_contact)
-    return db_contact
+        try:
+            for key, value in contact.model_dump(exclude_unset=True).items():
+                setattr(db_contact, key, value)
+            db.commit()
+            db.refresh(db_contact)
+            return db_contact
+        except (IntegrityError, DataError) as e:
+            db.rollback()
+            raise HTTPException(status_code=400, detail=f"Update failed: {str(e)}")
+    return None
 
 
 def delete_contact(db: Session, contact_id: int):
@@ -57,7 +65,42 @@ def search_contacts(db: Session, query: str):
     )
 
 
-def get_upcoming_birthdays(db: Session):
-    today = date.today()
-    next_week = today + timedelta(days=7)
-    return db.query(Contact).filter(Contact.birthday.between(today, next_week)).all()
+def get_upcoming_birthdays(db: Session, days: int = 7, start_date: date = None):
+    if days < 1:
+        raise HTTPException(status_code=400, detail="Days must be positive")
+
+    start = start_date or date.today()
+    end = start + timedelta(days=days)
+
+    # Query contacts with birthdays in the next 7 days (month and day)
+    contacts = (
+        db.query(
+            Contact.id,
+            Contact.first_name,
+            Contact.last_name,
+            func.to_char(Contact.birthday, "MON-DD").label("birthday_formatted"),
+        )
+        .filter(
+            (
+                (extract("month", Contact.birthday) == extract("month", start))
+                & (
+                    extract("day", Contact.birthday).between(
+                        extract("day", start), extract("day", end)
+                    )
+                )
+            )
+            | (
+                (extract("month", Contact.birthday) == extract("month", end))
+                & (extract("day", Contact.birthday) <= extract("day", end))
+            )
+        )
+        .all()
+    )
+
+    # Format response as list of dictionaries
+    return [
+        {
+            "message": f"{contact.first_name} {contact.last_name}'s birthday is on {contact.birthday_formatted} (ID: {contact.id})"
+        }
+        for contact in contacts
+    ]

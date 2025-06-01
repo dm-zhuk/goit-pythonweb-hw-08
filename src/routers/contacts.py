@@ -3,7 +3,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database.connect import get_db
-from schemas.contact import ContactCreate, ContactResponse, ContactUpdate
+from datetime import date
+from typing import Optional, List
+from schemas.contact import (
+    ContactCreate,
+    ContactResponse,
+    ContactUpdate,
+    BirthdayResponse,
+)
 from repository.contacts import (
     create_contact,
     get_contacts,
@@ -58,6 +65,8 @@ def search_contacts_by_query(query: str, db: Session = Depends(get_db)):
     return search_contacts(db, query)
 
 
-@router.get("/birthdays/", response_model=list[ContactResponse])
-def get_contacts_with_upcoming_birthdays(db: Session = Depends(get_db)):
-    return get_upcoming_birthdays(db)
+@router.get("/birthdays/", response_model=List[BirthdayResponse])
+def get_contacts_with_upcoming_birthdays(
+    days: int = 7, start_date: Optional[date] = None, db: Session = Depends(get_db)
+):
+    return get_upcoming_birthdays(db, days=days, start_date=start_date)
